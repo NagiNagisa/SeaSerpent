@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sea Serpent</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="bubbles"></div>
+
+    <!-- Start Screen -->
+    <div id="start-screen">
+        <h1>Sea Serpent</h1>
+        <p class="vtuber-name">for [あなたのVTuber名]</p>
+        <button id="start-button">Start Game</button>
+    </div>
+
+    <!-- Main Game View (hidden initially) -->
+    <div id="game-view" style="display: none;">
+        <h1>Sea Serpent</h1>
+        <div id="score-container">
+            <span>Score: <span id="current-score">0</span></span>
+            <span>High Score: <span id="high-score">0</span></span>
+        </div>
+        <div id="game-container">
+            <canvas id="gameCanvas" width="400" height="400"></canvas>
+            <div id="game-over-screen">
+                <h2>Game Over</h2>
+                <p>Your Score: <span id="final-score">0</span></p>
+                <button id="restart-button">Restart</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
