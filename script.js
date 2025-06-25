@@ -23,7 +23,6 @@ const createImage = (svg) => {
     return img;
 };
 
-// --- MODIFIED: Serpent head is now just the base shape ---
 const serpentHeadBaseSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M10 2 C15 2 18 5 18 10 S15 18 10 18 S2 15 2 10 S5 2 10 2 Z" fill="#00ffff"/></svg>`;
 const planktonSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><circle cx="10" cy="10" r="5" fill="#ffcc00"/><circle cx="10" cy="10" r="7" fill="rgba(255,204,0,0.5)"/></svg>`;
 const jellyfishSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M3 10 C3 5 17 5 17 10 Q15 15 10 15 Q5 15 3 10 Z" fill="rgba(255, 105, 180, 0.8)"/><path d="M5 14 Q6 18 7 14" stroke="rgba(255, 105, 180, 0.8)" stroke-width="1" fill="none"/><path d="M10 14 Q10 18 10 14" stroke="rgba(255, 105, 180, 0.8)" stroke-width="1" fill="none"/><path d="M15 14 Q14 18 13 14" stroke="rgba(255, 105, 180, 0.8)" stroke-width="1" fill="none"/></svg>`;
@@ -34,10 +33,10 @@ const planktonImg = createImage(planktonSVG);
 const jellyfishImg = createImage(jellyfishSVG);
 const coralImg = createImage(coralSVG);
 
-// --- Audio Context (remains the same) ---
+// --- Audio Context ---
 let audioCtx;
-function playEatSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; g.gain.setValueAtTime(0.5, audioCtx.currentTime); o.frequency.setValueAtTime(600, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2); o.start(); o.stop(audioCtx.currentTime + 0.2); }
-function playGameOverSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); o.type = 'lowpass'; o.frequency.setValueAtTime(150, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.8); o.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.8); }
+function playEatSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; g.gain.setValueAtTime(0.1, audioCtx.currentTime); o.frequency.setValueAtTime(600, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2); o.start(); o.stop(audioCtx.currentTime + 0.2); }
+function playGameOverSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; g.gain.setValueAtTime(0.15, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8); o.frequency.setValueAtTime(150, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.8); o.start(); o.stop(audioCtx.currentTime + 0.8); }
 
 // --- Game State Variables ---
 const box = 20;
@@ -110,7 +109,6 @@ function draw() {
         ctx.fillRect(serpent[i].x, serpent[i].y, box, box);
     }
     
-    // --- MODIFIED: Draw serpent head and eyes separately ---
     const headX = serpent[0].x;
     const headY = serpent[0].y;
     ctx.drawImage(serpentHeadBaseImg, headX, headY, box, box);
@@ -131,13 +129,12 @@ function draw() {
             ctx.fillRect(headX + box * 0.6, headY + box * 0.6, eyeSize, eyeSize);
             break;
         case 'RIGHT':
-        default: // Default to facing right
+        default:
             ctx.fillRect(headX + box * 0.6, headY + box * 0.2, eyeSize, eyeSize);
             ctx.fillRect(headX + box * 0.6, headY + box * 0.6, eyeSize, eyeSize);
             break;
     }
 
-    // Draw food, corals, jellyfish
     const pulse = Math.sin(animationFrame * 0.1) * 2;
     ctx.drawImage(planktonImg, food.x - pulse / 2, food.y - pulse / 2, box + pulse, box + pulse);
     corals.forEach(c => ctx.drawImage(coralImg, c.x, c.y, box, box));
@@ -153,7 +150,6 @@ function draw() {
     if (d === 'RIGHT') serpentX += box;
     if (d === 'DOWN') serpentY += box;
 
-    // Game Logic (eating, power-ups, collision)
     let newHead = { x: serpentX, y: serpentY };
 
     if (serpentX === food.x && serpentY === food.y) {
@@ -164,8 +160,9 @@ function draw() {
         if (score > 0 && score % 5 === 0 && !jellyfish) {
             placeJellyfish();
         }
+        // Don't pop the tail, so the serpent grows
     } else {
-        serpent.pop();
+        serpent.pop(); // Pop the tail if we didn't eat
     }
 
     if (jellyfish && serpentX === jellyfish.x && serpentY === jellyfish.y) {
