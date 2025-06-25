@@ -15,7 +15,41 @@ body {
 }
 
 /* --- Bubble Animation --- */
-.bubbles { ... } /* (Bubble styles remain the same) */
+.bubbles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 0; /* Behind other content */
+    overflow: hidden;
+    top: 0;
+    left: 0;
+}
+
+.bubble {
+    position: absolute;
+    bottom: -100px;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 255, 255, 0.15);
+    border-radius: 50%;
+    opacity: 0.5;
+    animation: rise 10s infinite ease-in;
+}
+
+@keyframes rise {
+    0% {
+        bottom: -100px;
+        transform: translateX(0);
+    }
+    50% {
+        transform: translateX(100px);
+    }
+    100% {
+        bottom: 1080px; /* Ensure it goes off screen */
+        transform: translateX(-200px);
+    }
+}
+/* --- End Bubble Animation --- */
 
 /* --- Screens --- */
 #start-screen, #game-view {
@@ -28,14 +62,11 @@ body {
     position: absolute;
     top: 0;
     left: 0;
+    z-index: 2; /* Above bubbles */
 }
 
 #start-screen {
-    z-index: 10;
-}
-
-#game-view {
-    z-index: 5;
+    background-color: rgba(0,0,0,0.2); /* Make it slightly transparent to see bubbles */
 }
 
 /* --- Typography & Buttons --- */
@@ -69,6 +100,10 @@ h1 {
 }
 
 /* --- Game Layout --- */
+#game-view {
+    background-color: transparent;
+}
+
 #score-container {
     font-size: 1.2rem;
     color: #e0f7fa;
@@ -99,6 +134,7 @@ canvas {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    z-index: 5;
 }
 
 #game-over-screen h2 {
