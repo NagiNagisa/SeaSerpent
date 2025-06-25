@@ -27,11 +27,13 @@ const serpentHeadBaseSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0
 const planktonSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><circle cx="10" cy="10" r="5" fill="#ffcc00"/><circle cx="10" cy="10" r="7" fill="rgba(255,204,0,0.5)"/></svg>`;
 const jellyfishSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M3 10 C3 5 17 5 17 10 Q15 15 10 15 Q5 15 3 10 Z" fill="rgba(255, 105, 180, 0.8)"/><path d="M5 14 Q6 18 7 14" stroke="rgba(255, 105, 180, 0.8)" stroke-width="1" fill="none"/><path d="M10 14 Q10 18 10 14" stroke="rgba(255, 105, 180, 0.8)" stroke-width="1" fill="none"/><path d="M15 14 Q14 18 13 14" stroke="rgba(255, 105, 180, 0.8)" stroke-width="1" fill="none"/></svg>`;
 const coralSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M10 20 V15 M10 15 C5 15 5 10 10 10 M10 15 C15 15 15 10 10 10 M10 10 C5 10 5 5 10 5 M10 5 C15 5 15 10 10 10" stroke="#ff7f50" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`;
+const crabSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2 10 C2 5 18 5 18 10 V15 H2 Z" fill="#ff4757"/><path d="M2 8 L0 6 M18 8 L20 6" stroke="#ff4757" stroke-width="1"/><circle cx="7" cy="8" r="1" fill="white"/><circle cx="13" cy="8" r="1" fill="white"/><circle cx="7" cy="8" r="0.5" fill="black"/><circle cx="13" cy="8" r="0.5" fill="black"/></svg>`;
 
 const serpentHeadBaseImg = createImage(serpentHeadBaseSVG);
 const planktonImg = createImage(planktonSVG);
 const jellyfishImg = createImage(jellyfishSVG);
 const coralImg = createImage(coralSVG);
+const crabImg = createImage(crabSVG);
 
 // --- Audio Context ---
 let audioCtx;
@@ -40,7 +42,7 @@ function playGameOverSound() { if (!audioCtx) return; const o = audioCtx.createO
 
 // --- Game State Variables ---
 const box = 20;
-let serpent, food, score, highScore, d, game, gameSpeed, animationFrame, corals, jellyfish, jellyfishTimeout;
+let serpent, food, score, highScore, d, game, gameSpeed, animationFrame, corals, jellyfish, jellyfishTimeout, crabs;
 
 // --- Game Logic ---
 function setupGame() {
@@ -71,6 +73,7 @@ function init() {
     jellyfish = null;
 
     placeCorals();
+    placeCrabs();
     placeFood();
 
     gameOverScreen.style.display = 'none';
@@ -81,10 +84,38 @@ function init() {
 
 function isPositionOccupied(x, y, checkSerpent = true) { if (checkSerpent) { for (let i = 0; i < serpent.length; i++) { if (x === serpent[i].x && y === serpent[i].y) return true; } } for (let i = 0; i < corals.length; i++) { if (x === corals[i].x && y === corals[i].y) return true; } return false; }
 function placeFood() { do { food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box }; } while (isPositionOccupied(food.x, food.y)); }
-function placeCorals() { corals = []; const c = 5; for (let i = 0; i < c; i++) { let o; do { o = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box }; } while (isPositionOccupied(o.x, o.y, false) || (o.x > 6 * box && o.x < 14 * box)); corals.push(o); } }
+function placeCorals() { corals = []; const c = 5; for (let i = 0; i < c; i++) { let o; do { o = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box }; } while (isPositionOccupied(o.x, o.y, false) || (o.y > 8 * box && o.y < 12 * box)); corals.push(o); } }
 function placeJellyfish() { do { jellyfish = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box }; } while (isPositionOccupied(jellyfish.x, jellyfish.y)); }
+
+function placeCrabs() {
+    crabs = [];
+    const crabLanes = [4, 8, 15, 19]; // Different y-coordinates for crabs
+    const crabCount = 3;
+    for (let i = 0; i < crabCount; i++) {
+        const laneY = crabLanes[i % crabLanes.length] * box;
+        const startX = Math.random() > 0.5 ? 0 : canvas.width - box;
+        crabs.push({
+            x: startX,
+            y: laneY,
+            dir: startX === 0 ? 1 : -1,
+            speed: (Math.random() * 0.5 + 0.4) // Speed between 0.4 and 0.9
+        });
+    }
+}
+
 function direction(e) { if (e.keyCode === 37 && d !== 'RIGHT') d = 'LEFT'; else if (e.keyCode === 38 && d !== 'DOWN') d = 'UP'; else if (e.keyCode === 39 && d !== 'LEFT') d = 'RIGHT'; else if (e.keyCode === 40 && d !== 'UP') d = 'DOWN'; }
 function collision(h, a) { for (let i = 0; i < a.length; i++) { if (h.x === a[i].x && h.y === a[i].y) return true; } return false; }
+
+function crabCollision(head, crabArray) {
+    for (let i = 0; i < crabArray.length; i++) {
+        const crab = crabArray[i];
+        if (head.y === crab.y && head.x < crab.x + box && head.x + box > crab.x) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function updateGameSpeed(s) { clearInterval(game); gameSpeed = s; game = setInterval(draw, gameSpeed); }
 
 function gameOver() {
@@ -103,42 +134,30 @@ function draw() {
     animationFrame++;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw serpent body
-    for (let i = 1; i < serpent.length; i++) {
-        ctx.fillStyle = `rgba(0, 255, 255, ${1 - i / serpent.length * 0.5})`;
-        ctx.fillRect(serpent[i].x, serpent[i].y, box, box);
-    }
-    
-    const headX = serpent[0].x;
-    const headY = serpent[0].y;
+    // Draw serpent
+    for (let i = 1; i < serpent.length; i++) { ctx.fillStyle = `rgba(0, 255, 255, ${1 - i / serpent.length * 0.5})`; ctx.fillRect(serpent[i].x, serpent[i].y, box, box); }
+    const headX = serpent[0].x; const headY = serpent[0].y;
     ctx.drawImage(serpentHeadBaseImg, headX, headY, box, box);
-
-    const eyeSize = box / 5;
-    ctx.fillStyle = '#001f3f'; // Eye color
+    const eyeSize = box / 5; ctx.fillStyle = '#001f3f';
     switch (d) {
-        case 'LEFT':
-            ctx.fillRect(headX + box * 0.2, headY + box * 0.2, eyeSize, eyeSize);
-            ctx.fillRect(headX + box * 0.2, headY + box * 0.6, eyeSize, eyeSize);
-            break;
-        case 'UP':
-            ctx.fillRect(headX + box * 0.2, headY + box * 0.2, eyeSize, eyeSize);
-            ctx.fillRect(headX + box * 0.6, headY + box * 0.2, eyeSize, eyeSize);
-            break;
-        case 'DOWN':
-            ctx.fillRect(headX + box * 0.2, headY + box * 0.6, eyeSize, eyeSize);
-            ctx.fillRect(headX + box * 0.6, headY + box * 0.6, eyeSize, eyeSize);
-            break;
-        case 'RIGHT':
-        default:
-            ctx.fillRect(headX + box * 0.6, headY + box * 0.2, eyeSize, eyeSize);
-            ctx.fillRect(headX + box * 0.6, headY + box * 0.6, eyeSize, eyeSize);
-            break;
+        case 'LEFT': ctx.fillRect(headX + box * 0.2, headY + box * 0.2, eyeSize, eyeSize); ctx.fillRect(headX + box * 0.2, headY + box * 0.6, eyeSize, eyeSize); break;
+        case 'UP': ctx.fillRect(headX + box * 0.2, headY + box * 0.2, eyeSize, eyeSize); ctx.fillRect(headX + box * 0.6, headY + box * 0.2, eyeSize, eyeSize); break;
+        case 'DOWN': ctx.fillRect(headX + box * 0.2, headY + box * 0.6, eyeSize, eyeSize); ctx.fillRect(headX + box * 0.6, headY + box * 0.6, eyeSize, eyeSize); break;
+        case 'RIGHT': default: ctx.fillRect(headX + box * 0.6, headY + box * 0.2, eyeSize, eyeSize); ctx.fillRect(headX + box * 0.6, headY + box * 0.6, eyeSize, eyeSize); break;
     }
 
+    // Draw items
     const pulse = Math.sin(animationFrame * 0.1) * 2;
     ctx.drawImage(planktonImg, food.x - pulse / 2, food.y - pulse / 2, box + pulse, box + pulse);
     corals.forEach(c => ctx.drawImage(coralImg, c.x, c.y, box, box));
     if (jellyfish) { const p = Math.sin(animationFrame * 0.08) * 3; ctx.globalAlpha = 0.8 + Math.sin(animationFrame * 0.08) * 0.2; ctx.drawImage(jellyfishImg, jellyfish.x, jellyfish.y, box, box); ctx.globalAlpha = 1.0; }
+
+    // Draw and move crabs
+    crabs.forEach(crab => {
+        crab.x += crab.dir * crab.speed;
+        if (crab.x <= 0 || crab.x >= canvas.width - box) crab.dir *= -1;
+        ctx.drawImage(crabImg, crab.x, crab.y, box, box);
+    });
 
     if (!d) return;
 
@@ -157,12 +176,9 @@ function draw() {
         playEatSound();
         currentScoreEl.innerText = score;
         placeFood();
-        if (score > 0 && score % 5 === 0 && !jellyfish) {
-            placeJellyfish();
-        }
-        // Don't pop the tail, so the serpent grows
+        if (score > 0 && score % 5 === 0 && !jellyfish) placeJellyfish();
     } else {
-        serpent.pop(); // Pop the tail if we didn't eat
+        serpent.pop();
     }
 
     if (jellyfish && serpentX === jellyfish.x && serpentY === jellyfish.y) {
@@ -175,7 +191,7 @@ function draw() {
         }, 5000);
     }
 
-    if (serpentX < 0 || serpentY < 0 || serpentX >= canvas.width || serpentY >= canvas.height || collision(newHead, serpent) || collision(newHead, corals)) {
+    if (serpentX < 0 || serpentY < 0 || serpentX >= canvas.width || serpentY >= canvas.height || collision(newHead, serpent) || collision(newHead, corals) || crabCollision(newHead, crabs)) {
         gameOver();
         return;
     }
@@ -184,20 +200,7 @@ function draw() {
 }
 
 // --- Bubble Creation ---
-function createBubbles() {
-    const bubbleCount = 20;
-    for (let i = 0; i < bubbleCount; i++) {
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-        const size = Math.random() * 40 + 10 + 'px';
-        bubble.style.width = size;
-        bubble.style.height = size;
-        bubble.style.left = Math.random() * 100 + '%';
-        bubble.style.animationDuration = Math.random() * 8 + 5 + 's';
-        bubble.style.animationDelay = Math.random() * 5 + 's';
-        bubblesContainer.appendChild(bubble);
-    }
-}
+function createBubbles() { const c = 20; for (let i = 0; i < c; i++) { const b = document.createElement('div'); b.className = 'bubble'; const s = Math.random() * 40 + 10 + 'px'; b.style.width = s; b.style.height = s; b.style.left = Math.random() * 100 + '%'; b.style.animationDuration = Math.random() * 8 + 5 + 's'; b.style.animationDelay = Math.random() * 5 + 's'; bubblesContainer.appendChild(b); } }
 
 // --- Event Listeners ---
 startButton.addEventListener('click', startGame);
